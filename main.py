@@ -1,5 +1,5 @@
 import pygame
-import sys
+import math
 
 pygame.init()
 
@@ -21,23 +21,26 @@ mario_x = 100
 mario_y = HEIGHT - mario_height - 50
 mario_vel_x = 0
 mario_vel_y = 0
-speed = 5
+speed = 7          # faster movement
 jump_power = 12
 gravity = 0.5
 on_ground = False
 
-# Ground
-ground_rect = pygame.Rect(0, HEIGHT - 50, WIDTH, 50)
+# VERY LONG FLOOR (world space)
+ground_rect = pygame.Rect(0, HEIGHT - 50, 10000, 50)
 
-# Block (Mario height)
+# Blocks
 block = pygame.Rect(300, HEIGHT - 100, 100, mario_height)
+block2 = pygame.Rect(600, 400, 100, 150)
 
 # Quicksand
 quicksand = pygame.Rect(500, 450, 100, 100)
 
-block2 = pygame.Rect(600, 400, 100, 150)
-
 solids = (ground_rect, block, quicksand, block2)
+
+# Camera
+camera_x = 0
+camera_y = 0
 
 running = True
 while running:
@@ -57,10 +60,6 @@ while running:
     if keys[pygame.K_SPACE] and on_ground:
         mario_vel_y = -jump_power
 
-    # Save previous pos
-    prev_mario_x = mario_x
-    prev_mario_y = mario_y
-
     # ---------- HORIZONTAL ----------
     mario_x += mario_vel_x
     mario_rect = pygame.Rect(mario_x, mario_y, mario_width, mario_height)
@@ -73,51 +72,61 @@ while running:
                 mario_x = solid.right
             mario_rect.topleft = (mario_x, mario_y)
 
-
-    # ---------- VERTICAL----------
+    # ---------- VERTICAL ----------
     mario_vel_y += gravity
     on_ground = False
 
-    direction = 0
-    if mario_vel_y > 0:
-        direction = 1
-    else:
-        direction=-1
-
+    direction = 1 if mario_vel_y > 0 else -1
     pixels = abs(int(mario_vel_y))
 
-    #calculating gravity
-    for i in range(pixels):
-        mario_y += direction*gravity
-
-        #update position
+    for _ in range(pixels):
+        mario_y += direction
         mario_rect.topleft = (mario_x, mario_y)
 
-        #quitting gravity once in collision with solid
         for solid in solids:
             if mario_rect.colliderect(solid):
-                #keep mario one pixel up
-                mario_y -= 1
-                #QUIT GRAVITY HERE:
+                mario_y -= direction
                 mario_vel_y = 0
                 on_ground = True
-                #update pos
                 mario_rect.topleft = (mario_x, mario_y)
                 break
         if on_ground:
             break
 
+    # ---------- CAMERA FOLLOW ----------
+    camera_x = mario_x - math.floor(WIDTH / 2)
+    camera_y = 0  # keep vertical locked (Mario-style)
+
     # ---------- DRAW ----------
     screen.fill(SKY_BLUE)
 
-    pygame.draw.rect(screen, GREEN, ground_rect)
-    pygame.draw.rect(screen, BLACK, block)
-    pygame.draw.rect(screen, SAND, quicksand)
-    pygame.draw.rect(screen, BLACK, block2)
+    #Draw based on camera
+    """
+    Since World is not moving and only camera, we only see blocks in terms of camera.
+    Thus: World position − Camera position = Screen position
+    
+    Test with this:
+    print(mario_x, block.x)
 
-    pygame.draw.rect(screen, RED, mario_rect)
+    See how this logic works
+    """
+
+    pygame.draw.rect(
+        screen, GREEN,
+        (ground_rect.x - camera_x, ground_rect.y - camera_y,
+         ground_rect.width, ground_rect.height)
+    )
+
+    #-----DRAWING SOLIDS-------
+
+    #Cant draw these individually because each is cannot have the same color
+
+    pygame.draw.rect(screen, BLACK,(block.x - camera_x, block.y - camera_y, block.width, block.height))
+    pygame.draw.rect(screen, BLACK,(block2.x - camera_x, block2.y - camera_y, block2.width, block2.height))
+    pygame.draw.rect(screen, SAND,(quicksand.x - camera_x, quicksand.y - camera_y, quicksand.width, quicksand.height))
+
+    pygame.draw.rect(screen, RED,(mario_x - camera_x, mario_y - camera_y, mario_width, mario_height))
 
     pygame.display.flip()
 
 pygame.quit()
-sys.exit()
