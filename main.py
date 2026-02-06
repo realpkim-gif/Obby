@@ -31,12 +31,13 @@ ground_rect = pygame.Rect(0, HEIGHT - 50, 10000, 50)
 
 # Blocks
 block = pygame.Rect(300, HEIGHT - 100, 100, mario_height)
-block2 = pygame.Rect(600, 400, 100, 150)
-
+block2 = pygame.Rect(765, 500, 100, 50)
+block3 = pygame.Rect(1500, 500, 100, 50)
 # Quicksand
 quicksand = pygame.Rect(500, 450, 100, 100)
 
-solids = (ground_rect, block, quicksand, block2)
+#KEY POINT
+solids = (ground_rect, block, quicksand, block2, block3)
 
 # Camera
 camera_x = 0
@@ -81,6 +82,7 @@ while running:
 
     for _ in range(pixels):
         mario_y += direction
+        #MARIO TOP-LEFT POS
         mario_rect.topleft = (mario_x, mario_y)
 
         for solid in solids:
@@ -120,10 +122,16 @@ while running:
     #-----DRAWING SOLIDS-------
 
     #Cant draw these individually because each is cannot have the same color
+    # KEY POINT
 
     pygame.draw.rect(screen, BLACK,(block.x - camera_x, block.y - camera_y, block.width, block.height))
     pygame.draw.rect(screen, BLACK,(block2.x - camera_x, block2.y - camera_y, block2.width, block2.height))
     pygame.draw.rect(screen, SAND,(quicksand.x - camera_x, quicksand.y - camera_y, quicksand.width, quicksand.height))
+    pygame.draw.rect(screen, BLACK,(block3.x - camera_x, block3.y - camera_y, block3.width, block3.height))
+
+    #POSITION FINDER OF POTENTIAL BLOCKS
+    print(mario_rect.bottomleft)
+    #print(mario_rect.topleft)
 
     pygame.draw.rect(screen, RED,(mario_x - camera_x, mario_y - camera_y, mario_width, mario_height))
 
