@@ -1,0 +1,17 @@
+The Timer System:
+1. start_time = when this attempt began
+
+Set when you press R to restart
+Captures the absolute time from pygame.time.get_ticks()
+
+2. current_time = pygame.time.get_ticks() - start_time
+
+pygame.time.get_ticks() = total milliseconds since pygame started (never stops)
+Subtracting start_time gives you time since this attempt started
+Always starts at 0 for each new attempt
+
+3. When you die:
+
+deathtime = current_time saves how long you survived
+
+-from claude AI
