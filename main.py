@@ -209,7 +209,7 @@ def draw_win(screen,final_time_ms, WIDTH, HEIGHT):
     screen.blit(menu_txt, (menu_x, menu_y))
 
     #score
-    score_txt = small_font.render("(not logged): Your score "+str(round(score,2)), True, SKY_BLUE)
+    score_txt = small_font.render("(logged): Your score "+str(round(score,2)), True, SKY_BLUE)
     score_x = WIDTH // 2 - score_txt.get_width() // 2
     score_y = time_y+120
     screen.blit(score_txt, (score_x, score_y))
