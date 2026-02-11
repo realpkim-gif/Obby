@@ -2,7 +2,8 @@ import pygame
 import math
 from Lazer_mob import LaserMob
 import sys
-
+import pandas as pd
+import os
 
 pygame.init()
 
@@ -25,6 +26,9 @@ castle = pygame.transform.scale(castle, (600, 320))
 castle_rect = castle.get_rect()
 castle_rect.bottomleft = (9500, HEIGHT - 50)
 
+#high scores
+SCORE_FILE = "highscores.csv"
+MAX_SCORES = 5
 
 # Mario - FIXED: Changed starting position from 9000 to 100
 mario_width = 40
@@ -138,7 +142,7 @@ for i, gr in enumerate(ground_platforms):
 
 # fireball shooting mechanism
 last_shot_time = 0
-shot_cooldown_ms = 360
+shot_cooldown_ms = 500
 fireball_width = 10
 fireball_height = 10
 fireballs = []
@@ -191,7 +195,6 @@ def draw_win(screen,final_time_ms, WIDTH, HEIGHT):
     score_x = WIDTH // 2 - score_text.get_width() // 2
     score_y = go_y + 54
     screen.blit(score_text, (score_x, score_y))
-    print(final_seconds, kills)
 
     # Restart
     restart_text = small_font.render("Press R to Restart", True, (200, 200, 200))
@@ -215,16 +218,45 @@ def draw_win(screen,final_time_ms, WIDTH, HEIGHT):
 
 
 def main_menu(screen, WIDTH, HEIGHT):
-    #Fill entire screen with skyblue
     screen.fill(SKY_BLUE)
 
-    time_text = small_font.render("Press s to start", True, (255, 255, 255))
-    time_x = WIDTH // 2 - time_text.get_width() // 2
-    time_y = HEIGHT//3
-    screen.blit(time_text, (time_x, time_y))
+    title = large_font.render("OBBY", True, BLACK)
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 60))
+
+    start_txt = small_font.render("Press S to start", True, BLACK)
+    screen.blit(start_txt, (WIDTH // 2 - start_txt.get_width() // 2, 150))
+
+    # High score box
+    box_w, box_h = 420, 240
+    box_x = WIDTH // 2 - box_w // 2
+    box_y = 220
+
+    pygame.draw.rect(screen, BLACK, (box_x, box_y, box_w, box_h), border_radius=10)
+    pygame.draw.rect(screen, RED, (box_x, box_y, box_w, box_h), 3, border_radius=10)
+
+    hs_title = small_font.render("Previous High Scores", True, (255, 255, 255))
+    screen.blit(hs_title, (box_x + 15, box_y + 15))
+
+    # After drawing scores
+    restart_hs = small_font.render("Press R to refresh score", True, YELLOW)
+
+    restart_x = WIDTH // 2 - restart_hs.get_width() // 2
+    restart_y = box_y + box_h + 20  # 20 pixels below the box
+
+    screen.blit(restart_hs, (restart_x, restart_y))
+
+    if highscores.empty:
+        no_txt = small_font.render("No wins yet", True, (200, 200, 200))
+        screen.blit(no_txt, (box_x + 15, box_y + 60))
+    else:
+        y = box_y + 60
+        for i, row in highscores.iterrows():
+            score_value = round(row["Score"], 2)
+            line = small_font.render(f"{i+1}) {score_value}", True, (255, 255, 255))
+            screen.blit(line, (box_x + 25, y))
+            y += 35
 
     pygame.display.flip()
-
 
 def draw_game_over(screen, final_time_ms, WIDTH, HEIGHT):
     # Fill entire screen with black
@@ -267,6 +299,37 @@ def draw_game_over(screen, final_time_ms, WIDTH, HEIGHT):
     pygame.display.flip()
 
 
+def load_highscores():
+    if os.path.exists(SCORE_FILE):
+        df = pd.read_csv(SCORE_FILE)
+        return df
+    else:
+        return pd.DataFrame({
+            "Score": []
+        })
+
+
+def save_highscores(df):
+    df.to_csv(SCORE_FILE, index=False)
+
+def record_score(new_score, df):
+    new_row = pd.DataFrame({"Score": [float(new_score)]})
+    df = pd.concat([df, new_row], ignore_index=True)
+
+    df = df.sort_values(by="Score", ascending=False)
+    df = df.head(MAX_SCORES)
+
+    save_highscores(df)
+    return df
+
+def reset_scores():
+    df = pd.DataFrame(columns=["Score"])  # empty dataframe
+    save_highscores(df)                   # overwrite file
+    return df
+
+highscores = load_highscores()
+
+
 # Camera
 camera_x = 0
 camera_y = 0
@@ -291,6 +354,10 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        #reset scores
+        if menu==True and event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            highscores = reset_scores()  # <-- update the variable too
+
         # RESTART FUNCTIONALITY
         if menu == True and event.type == pygame.KEYDOWN:
             main_menu(screen, WIDTH, HEIGHT)
@@ -322,7 +389,7 @@ while running:
                         patrol_min_x=gr.left,
                         patrol_max_x=gr.right,
                     ))
-        print(gamestate, menu)
+
         if event.type == pygame.KEYDOWN and event.key == pygame.K_m and gamestate == False and menu == False:
             menu =True
 
@@ -357,6 +424,7 @@ while running:
 
     keys = pygame.key.get_pressed()
     mario_vel_x = 0
+
 
     if keys[pygame.K_a]:
         mario_vel_x = -speed
@@ -446,6 +514,10 @@ while running:
             gamestate = False
             win_condition = True
             last_shot_time = 0
+
+            score = (100 - current_time / 1000) / 5 + kills
+            highscores = record_score(score, highscores)
+
             draw_win(screen, deathtime, WIDTH, HEIGHT)
 
         # ---------- DEATH PIT / FALL DEATH ----------
