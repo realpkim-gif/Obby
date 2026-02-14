@@ -33,7 +33,7 @@ MAX_SCORES = 5
 # Mario - FIXED: Changed starting position from 9000 to 100
 mario_width = 40
 mario_height = 50
-mario_x = 9000  # FIXED: Was 9000 (near end), now starts at beginning
+mario_x = 100  # FIXED: Was 9000 (near end), now starts at beginning
 mario_y = HEIGHT - mario_height - 50
 mario_vel_x = 0
 mario_vel_y = 0
@@ -191,7 +191,7 @@ def draw_win(screen,final_time_ms, WIDTH, HEIGHT):
     time_y = go_y + 100
     screen.blit(time_text, (time_x, time_y))
 
-    score_text = small_font.render(f"Score: {round((final_seconds/5)+kills,2)}s", True, BLACK)
+    score_text = small_font.render(f"Score: {round(score,2)}s", True, BLACK)
     score_x = WIDTH // 2 - score_text.get_width() // 2
     score_y = go_y + 54
     screen.blit(score_text, (score_x, score_y))
